@@ -9,7 +9,12 @@ from src.model import get_model
 from src.utils import colorize_mask
 
 def inference(args):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if torch.backends.mps.is_available():
+        device = torch.device('mps')
+    elif torch.cuda.is_available():
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
     print(f"Using device: {device}")
 
     model = get_model(num_classes=19, backbone='resnet50') 
