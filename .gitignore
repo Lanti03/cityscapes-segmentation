@@ -1,0 +1,25 @@
+# System
+.DS_Store
+__pycache__/
+*.py[cod]
+
+# Environments
+venv/
+env/
+.env
+
+# Data
+data/
+dummy_data/
+
+# Model Checkpoints
+*.pth
+checkpoints/
+
+# Logs
+logs/
+
+# Outputs
+*.png
+*.jpg
+outputs/
