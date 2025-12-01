@@ -23,18 +23,14 @@ def train(args):
     print(f"Using device: {device}")
 
     transform = transforms.Compose([
-        transforms.Resize((512, 1024)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     
-    target_transform = transforms.Compose([
-        transforms.Resize((512, 1024), interpolation=transforms.InterpolationMode.NEAREST),
-    ])
+    target_transform = None
 
     NUM_CLASSES = 19
-    
-    # Placeholder for dataset path - user needs to provide this
+
     if not os.path.exists(args.data_path):
         print(f"Data path {args.data_path} does not exist. Please download Cityscapes.")
         return

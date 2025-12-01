@@ -11,6 +11,7 @@ env/
 # Data
 data/
 dummy_data/
+data_small/
 
 # Model Checkpoints
 *.pth
