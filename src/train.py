@@ -50,15 +50,35 @@ def train(args):
     criterion = nn.CrossEntropyLoss(ignore_index=255)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
 
+    start_epoch = 0
     best_miou = 0.0
+
+    if args.resume:
+        if os.path.exists(args.resume):
+            print(f"Loading checkpoint: {args.resume}")
+            checkpoint = torch.load(args.resume, map_location=device)
+            
+            if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+                model.load_state_dict(checkpoint['model_state_dict'])
+                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                start_epoch = checkpoint['epoch']
+                best_miou = checkpoint['best_miou']
+            else:
+                model.load_state_dict(checkpoint)
+                start_epoch = int(args.resume.split('_')[-1].replace('.pth', ''))
+                
+            print(f"Resuming from epoch {start_epoch + 1}")
+        else:
+            print(f"Checkpoint {args.resume} not found, starting from scratch")
 
     os.makedirs('logs', exist_ok=True)
     csv_file = 'logs/training_metrics.csv'
-    with open(csv_file, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['Epoch', 'Train_Loss', 'Val_Loss', 'mIoU', 'Best_mIoU'])
+    if start_epoch == 0:
+        with open(csv_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Epoch', 'Train_Loss', 'Val_Loss', 'mIoU', 'Best_mIoU'])
 
-    for epoch in range(args.epochs):
+    for epoch in range(start_epoch, args.epochs):
         model.train()
         running_loss = 0.0
         
@@ -116,11 +136,23 @@ def train(args):
             writer.writerow([epoch+1, running_loss / len(train_loader), val_loss / len(val_loader), miou, best_miou])
 
         os.makedirs('checkpoints', exist_ok=True)
-        torch.save(model.state_dict(), f"checkpoints/checkpoint_epoch_{epoch+1}.pth")
+        checkpoint = {
+            'epoch': epoch + 1,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'best_miou': best_miou
+        }
+        torch.save(checkpoint, f"checkpoints/checkpoint_epoch_{epoch+1}.pth")
         
         if miou > best_miou:
             best_miou = miou
-            torch.save(model.state_dict(), "checkpoints/best_model.pth")
+            best_checkpoint = {
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'best_miou': best_miou
+            }
+            torch.save(best_checkpoint, "checkpoints/best_model.pth")
             print(f"New best model saved with mIoU: {miou:.4f}")
 
 if __name__ == '__main__':
@@ -129,6 +161,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--resume', type=str, default='', help='Path to checkpoint to resume from')
     args = parser.parse_args()
     
     train(args)
