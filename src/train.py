@@ -35,7 +35,9 @@ def train(args):
         print(f"Data path {args.data_path} does not exist. Please download Cityscapes.")
         return
 
-    # Optimize DataLoader
+    # Stable DataLoader settings for Mac M-series
+    # workers=0 avoids multiprocessing overhead/deadlocks
+    # pin_memory=False because it's not supported on MPS yet
     num_workers = args.workers
     
     train_dataset = CityscapesDataset(args.data_path, split='train', transform=transform, target_transform=target_transform)
@@ -43,9 +45,7 @@ def train(args):
         train_dataset, 
         batch_size=args.batch_size, 
         shuffle=True, 
-        num_workers=num_workers,
-        pin_memory=True,
-        persistent_workers=True if num_workers > 0 else False
+        num_workers=num_workers
     )
     
     val_dataset = CityscapesDataset(args.data_path, split='val', transform=transform, target_transform=target_transform)
@@ -53,9 +53,7 @@ def train(args):
         val_dataset, 
         batch_size=args.batch_size, 
         shuffle=False, 
-        num_workers=num_workers,
-        pin_memory=True,
-        persistent_workers=True if num_workers > 0 else False
+        num_workers=num_workers
     )
 
     model = get_model(num_classes=NUM_CLASSES, backbone='resnet50').to(device)
@@ -175,7 +173,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--resume', type=str, default='', help='Path to checkpoint to resume from')
-    parser.add_argument('--workers', type=int, default=4, help='Number of data loading workers')
+    parser.add_argument('--workers', type=int, default=0, help='Number of data loading workers')
     args = parser.parse_args()
     
     train(args)
