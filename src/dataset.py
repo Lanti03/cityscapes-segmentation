@@ -17,13 +17,21 @@ class CityscapesDataset(Dataset):
         self.images = []
         self.targets = []
         
-        self.mapping = {
+        # Create lookup table for fast mapping
+        self.lookup_table = np.zeros(256, dtype=np.uint8)
+        self.lookup_table[:] = 255 # Default to ignore index
+        
+        mapping = {
             0: 255, 1: 255, 2: 255, 3: 255, 4: 255, 5: 255, 6: 255,
             7: 0, 8: 1, 9: 255, 10: 255, 11: 2, 12: 3, 13: 4,
             14: 255, 15: 255, 16: 255, 17: 5, 18: 255, 19: 6, 20: 7,
             21: 8, 22: 9, 23: 10, 24: 11, 25: 12, 26: 13, 27: 14,
             28: 15, 29: 255, 30: 255, 31: 16, 32: 17, 33: 18, -1: 255
         }
+        
+        for k, v in mapping.items():
+            if k >= 0:
+                self.lookup_table[k] = v
 
         for city in os.listdir(self.images_dir):
             img_dir = os.path.join(self.images_dir, city)
@@ -40,10 +48,9 @@ class CityscapesDataset(Dataset):
 
     def _encode_target(self, target):
         target = np.array(target)
-        mask = np.zeros_like(target)
-        for k, v in self.mapping.items():
-            mask[target == k] = v
-        return Image.fromarray(mask)
+        # Use lookup table for fast mapping
+        mask = self.lookup_table[target]
+        return torch.as_tensor(mask, dtype=torch.long)
 
     def __len__(self):
         return len(self.images)
@@ -52,15 +59,11 @@ class CityscapesDataset(Dataset):
         image = Image.open(self.images[idx]).convert('RGB')
         target = Image.open(self.targets[idx])
         
-        target = self._encode_target(target)
-
+        # Transform image (ToTensor + Normalize)
         if self.transform:
             image = self.transform(image)
-        
-        if self.target_transform:
-            target = self.target_transform(target)
             
-        if not isinstance(target, torch.Tensor):
-             target = torch.as_tensor(np.array(target), dtype=torch.long)
+        # Map target labels and convert to tensor directly
+        target = self._encode_target(target)
 
         return image, target
