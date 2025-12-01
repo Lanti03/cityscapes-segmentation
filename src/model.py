@@ -10,10 +10,8 @@ def get_model(num_classes, backbone='resnet50', pretrained=True):
     else:
         raise ValueError(f"Backbone {backbone} not supported.")
     
-    # Replace the classifier head for the specific number of classes
     model.classifier[4] = torch.nn.Conv2d(256, num_classes, kernel_size=(1, 1), stride=(1, 1))
     
-    # If using auxiliary loss, replace that head too
     if model.aux_classifier is not None:
         model.aux_classifier[4] = torch.nn.Conv2d(256, num_classes, kernel_size=(1, 1), stride=(1, 1))
         
