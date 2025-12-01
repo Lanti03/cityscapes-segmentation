@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="sq">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Segmentimi Semantik i Rrugëve - DeepLabV3+</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .tech-specs {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .tech-badge {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .container {
+            display: flex;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1400px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .main-content {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            min-width: 300px;
+        }
+
+        .legend-sidebar {
+            flex: 1;
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            min-width: 250px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .legend-sidebar h3 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 0.75rem;
+            padding: 4rem 2rem;
+            text-align: center;
+            background: var(--surface);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .preview-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .image-card {
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+        }
+
+        .image-card h3 {
+            margin-top: 0;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        img {
+            width: 100%;
+            height: auto;
+            border-radius: 0.375rem;
+            display: block;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            padding: 0.25rem 0;
+        }
+
+        .color-swatch {
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 0.25rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: var(--primary);
+            margin-top: 1rem;
+            font-weight: 500;
+            padding: 1rem;
+            background: #eff6ff;
+            border-radius: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .preview-container {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                flex-direction: column;
+            }
+
+            .legend-sidebar {
+                width: 100%;
+                position: static;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Segmentimi Semantik i Rrugëve</h1>
+        <div class="subtitle">
+            Implementim i arkitekturës <strong>DeepLabV3+</strong> për kuptimin e skenave urbane.
+            Modeli përdor një rrjet konvolucional të thellë për të klasifikuar çdo piksel të imazhit.
+        </div>
+        <div class="tech-specs">
+            <span class="tech-badge">Encoder: ResNet50 Backbone</span>
+            <span class="tech-badge">Decoder: DeepLabV3+</span>
+            <span class="tech-badge">Moduli: ASPP (Atrous Spatial Pyramid Pooling)</span>
+            <span class="tech-badge">Dataset: Cityscapes</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="upload-zone" id="dropZone">
+                <span class="upload-icon">📷</span>
+                <p style="margin: 0; font-size: 1.1rem; font-weight: 500;">Tërhiqni dhe lëshoni një imazh këtu</p>
+                <p style="color: var(--text-light); margin-top: 0.5rem;">ose klikoni për të shfletuar skedarët</p>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            </div>
+
+            <div class="loading" id="loading">
+                Duke procesuar imazhin me DeepLabV3+... Ju lutem prisni.
+            </div>
+
+            <div class="preview-container" id="previewContainer">
+                <div class="image-card">
+                    <h3>Imazhi Hyrës (Input)</h3>
+                    <img id="originalImage" src="" alt="Original">
+                </div>
+                <div class="image-card">
+                    <h3>Rezultati i Segmentimit (Output)</h3>
+                    <img id="resultImage" src="" alt="Result">
+                </div>
+            </div>
+        </div>
+
+        <div class="legend-sidebar">
+            <h3>Legjenda e Klasave</h3>
+            <div id="legendItems">
+                {% for item in legend %}
+                <div class="legend-item">
+                    <div class="color-swatch"
+                        style="background-color: rgb({{ item.color[0] }}, {{ item.color[1] }}, {{ item.color[2] }})">
+                    </div>
+                    <span>{{ item.name }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const originalImage = document.getElementById('originalImage');
+        const resultImage = document.getElementById('resultImage');
+        const loading = document.getElementById('loading');
+
+        // Drag and Drop handlers
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length) handleFile(files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Ju lutem ngarkoni një skedar imazhi.');
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                originalImage.src = e.target.result;
+                previewContainer.style.display = 'grid';
+                resultImage.src = ''; // Clear previous result
+                processImage(file);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function processImage(file) {
+            loading.style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Gabim: ' + data.error);
+                } else {
+                    resultImage.src = data.mask_image;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Dështoi procesimi i imazhit.');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>
